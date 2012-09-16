@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8" />
+		
+		<title>Diablo 3 API - Javascript Client Library</title>
+        <meta name="description" content="This is a Javascript Client Library for Blizzard's Diablo 3 API- it provides very simply interface to working with the official API, as long as some bonuses for getting images- perfect for creating rich interfaces" />
+		<style type="text/css">
+			* {
+				margin: 0;
+				padding: 0;
+			}
+			
+			body {
+				font: normal 100% Arial;
+                margin-top: 123px;
+			}
+            
+            #header {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+				background: rgba(0, 0, 0, .9);
+                color: #fff;
+                text-align: center;
+                padding: 5px;
+				margin-bottom: 20px;
+                border-bottom: 1px solid #fff;
+                box-shadow: 0 5px 5px 0 rgba(0, 0, 0, .3);
+                z-index: 400;
+            }
+                #header h1 {
+                    font-size: 140%;
+                }
+                #header p {
+                    font-size: 110%;
+                }
+                    #header p a {
+                        color: inherit;
+                        font-style: italic;
+                    }
+                    #header form {
+                        margin-top: 3px;
+                        font-size: 90%;
+                    }
+                    #header input[type=text], #header select {
+                        height: 22px;
+                        line-height: 22px;
+                        vertical-align: middle;
+                        font-size: 15px;
+                    }
+                    #header input[type=text] {
+                        background: #fff;
+                        border: 1px solid #aaa;
+                        padding: 0 4px;
+                        width: 80px;
+                        border-radius: 3px;
+                        margin-right: 5px;
+                    }
+                    #header select {
+                        padding: 0 4px;
+                        background: #fff;
+                        border: 1px solid #aaa;
+                        border-radius: 3px;
+                    }
+                    #header option {
+                        padding: 0 5px;
+                    }
+                    #header label {
+                        display: inline-block;
+                        margin-top: 7px;
+                        vertical-align: middle;
+                    }
+                    #header input[type=submit] {
+                        margin-top: 7px;
+                        vertical-align: middle;
+                        padding: 1px 10px;
+                    }
+                    
+            #api-result {
+                padding: 10px 5px;
+            }
+			
+			.request {
+				margin-bottom: 10px;
+				padding: 5px;
+				border: 1px solid #999;
+				border-radius: 4px;
+			}
+				.request h2 {
+					position: relative;
+					font-size: 120%;
+					font-weight: bold;
+					border-bottom: 2px solid #000;
+					padding-bottom: 2px;
+					margin-bottom: 4px;
+				}
+				.request a {
+					position: absolute;
+					font-size: 60%;
+					bottom: 0;
+					right: 0;
+					text-decoration: none;
+					font-weight: normal;
+					color: #999;
+				}
+				.request code {
+					background: #fcfcfc;
+					border: 1px solid #aaa;
+					padding: 5px;
+					display: block;
+					margin-top: 4px;
+					border-radius: 4px;
+                    font-size: 90%;
+					line-height: 120%;
+                    color: #333;
+				}
+				.request  div {
+				}
+		</style>
+		<script type="text/javascript">
+            function $(id) { return document.getElementById(id); }
+            
+            function createSelects() {
+                var htmlServers = '';
+                for (var key in D3API.SERVERS) {
+                    htmlServers += '<option value="' + D3API.SERVERS[key] + '">' + D3API.SERVERS[key] + '</option>';
+                }
+                $("selectServer").innerHTML = htmlServers;
+                
+                var htmlLocales = '';
+                for (var key in D3API.LOCALES) {
+                    htmlLocales += '<option value="' + D3API.LOCALES[key] + '">' + D3API.LOCALES[key] + '</option>';
+                }
+                $("selectLocale").innerHTML = htmlLocales;
+            }
+            
+			function testApi() {
+                $("api-result").innerHTML = '';
+                
+				D3API.setServer($("selectServer").value);
+				D3API.setLocale($("selectLocale").value);
+                
+                var battletagName = $("inputbtName").value || 'MasterBoo',
+                    battletagCode = $("inputbtCode").value || '1500',
+                    heroId = $("inputHero").value || '2747232';
+                    
+                $("inputbtName").value = battletagName;
+                $("inputbtCode").value = battletagCode;
+                $("inputHero").value = heroId;
+				
+				D3API.getCareer({
+					"battletagName": battletagName,
+					"battletagCode": battletagCode,
+					"success": function(data, url, options) {
+						callback("getCareer", true, data, url, options);
+					},
+					"error": function(data, url, options) {
+						callback("getCareer", false, data, url, options);
+					}
+				});
+				
+				D3API.getHero({
+					"battletagName": battletagName,
+					"battletagCode": battletagCode,
+					"heroId": heroId,
+					"success": function(data, url, options) {
+						var el = callback("getHero", true, data, url, options);
+						
+						var elItems = document.createElement("div"),
+                            loadedItem = false,
+							html = '<img src="' + D3API.Media.paperdoll(data) + '" alt="" /><br />';
+							
+						for (var type in data.items) {
+							html += '<img src="' + D3API.Media.item(data.items[type]) + '" alt="" />';
+                            
+                            if (!loadedItem) {
+                                loadedItem = true;
+                                D3API.getItem({
+                                    "item": data.items[type],
+                                    "success": function(data, url, options) {
+                                        callback("getItem", true, data, url, options);
+                                    },
+                                    "error": function(data, url, options) {
+                                        callback("getItem", true, data, url, options);
+                                    }
+                                });
+                            }
+						}
+                        html += '<br />';
+						for (var type in data.skills) {
+                            for (var i=0; i<data.skills[type].length; i++) {
+                                html += '<img src="' + D3API.Media.skill(data.skills[type][i]) + '" alt="" />';
+                            }
+                        }
+						
+						elItems.innerHTML = html;
+						el.appendChild(elItems);
+					},
+					"error": function(data, url, options) {
+						callback("getHero", false, data, url, options);
+					}
+				});
+				
+				D3API.getFollower({
+					"type": D3API.FOLLOWERS.TEMPLAR,
+					"success": function(data, url, options) {
+						callback("getFollower", true, data, url, options);
+					},
+					"error": function(data, url, options) {
+						callback("getFollower", false, data, url, options);
+					}
+				});
+				
+				D3API.getArtisan({
+					"type": D3API.ARTISANS.JEWELER,
+					"success": function(data, url, options) {
+						callback("getArtisan", true, data, url, options);
+					},
+					"error": function(data, url, options) {
+						callback("getFollower", false, data, url, options);
+					}
+				});
+			}
+			
+			function callback(method, isOK, data, url, options) {
+				var func = "D3API." + method + "({\n",
+					arrOptions = [];
+                    
+				for (var option in options) {
+					if (option == "success" || option == "error") {
+                        options[option] = 'function(){...}';
+                    } else {
+                        options[option] = "'" + options[option] + "'";
+                    }
+					arrOptions.push("&nbsp;&nbsp;&nbsp;&nbsp;" + option + ': ' + options[option]);
+				}
+				func += arrOptions.join(",\n") + "\n});";
+				
+				var el = document.createElement("div");
+				el.className = "request";
+				el.innerHTML = '<h2>' + method + ' (' + (isOK? 'OK' : 'Error') + '):<a href="' + url + '" target="_blank">' + url + '</a></h2><pre>' + func + '</pre><code>' + JSON.stringify(data) + '</code>';
+				$("api-result").appendChild(el);
+                
+                console && console.info(method + "\n" + url + "\n", data);
+                
+				return el;
+			}
+            
+			window.onload = function() {
+                createSelects();
+                testApi();
+            };
+		</script>
+	</head> 
+	 
+	<body>
+        <div id="header">
+            <h1>Diablo III - Javascript API</h1>
+            <p>
+                File is available here <a href="d3api.js">d3api.js</a> - please download and don't hot link!
+            </p>
+            <form action="" method="GET" onsubmit="testApi(); return false;">
+                <label>Server: <select id="selectServer"></select></label>
+                <label>Locale: <select id="selectLocale"></select></label>
+                <br />
+                <label>BattleTag Name: <input type="text" value="" id="inputbtName" /></label>
+                <label>BattleTag Code: <input type="text" value="" id="inputbtCode" /></label>
+                <label>Hero Id: <input type="text" value="" id="inputHero" /></label>
+                <input type="submit" value="Test" />
+            </form>
+        </div>
+
+        <div id="api-result"></div>
+		<script type="text/javascript" src="d3api.js"></script>
+		<script type="text/javascript">
+			var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+			document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+		</script>
+		<script type="text/javascript">
+			try {
+				var pageTracker = _gat._getTracker("UA-9877348-1");
+				pageTracker._trackPageview();
+			} catch(err) {}
+		</script>
+	</body>
+</html>
