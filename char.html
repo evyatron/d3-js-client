@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8" />
+		
+		<title>Diablo 3 - API</title>
+		<style type="text/css">
+			* {
+				margin: 0;
+				padding: 0;
+			}
+			
+			body {
+				font: normal 100% Arial;
+			}
+            
+			#char {
+                position: relative;
+                width: 994px;
+                height: 645px;
+            }
+                #char > div {
+                    position: absolute;
+               }
+                #char #bg {
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    z-index: 100;
+                    background-position: 50% 50%;
+                    background-repeat: no-repeat;
+                }
+                #char #items {
+                    top: 155px;
+                    right: 220px;
+                    z-index: 300;
+                    width: 292px;
+                    height: 417px;
+                }
+                    #char #items .item {
+                        position: absolute;
+                        -moz-transition: all .2s linear;
+                    }
+                    #char #items .item:hover {
+                        -moz-transform: scale(1.2);
+                        z-index: 10;
+                    }
+                    
+                    
+                    /* general item style- size and position on character sheet */
+                    .item {
+                        width: 64px;
+                        height: 128px;
+                        background-repeat: no-repeat;
+                        background-position: 50% 50%;
+                    }
+                    .item.torso {
+                        width: 82px;
+                        height: 164px;
+                    }
+                    .item.waist, .item.leftFinger, .item.rightFinger, .item.neck {
+                        height: 64px;
+                    }
+                    
+                    .item.head { top: -28px; left: 114px; }
+                    .item.torso { top: 52px; left: 105px; }
+                    .item.waist { top: 178px; left: 114px; }
+                    .item.legs { top: 210px; left: 114px; }
+                    .item.feet { top: 308px; left: 114px; }
+                    
+                    .item.neck { top: 44px; left: 193px; }
+                    .item.bracers { top: 108px; left: 222px; }
+                    .item.rightFinger { top: 216px; left: 222px; }
+                    .item.offHand { top: 282px; left: 222px; }
+                    
+                    .item.shoulders { top: 15px; left: 32px; }
+                    .item.hands { top: 108px; left: 6px; }
+                    .item.mainHand { top: 282px; left: 6px; }
+                    .item.leftFinger { top: 216px; left: 6px; }
+		</style>
+		<script type="text/javascript">
+			function init() {
+                var battletagName = 'MasterBoo',
+                    battletagCode = '1500',
+                    heroId = '2747232',
+                    
+                    elCharBG = document.getElementById("bg");
+				
+				D3API.getHero({
+					"battletagName": battletagName,
+					"battletagCode": battletagCode,
+					"heroId": heroId,
+					"success": function(data, url, options) {
+                        elCharBG.style.backgroundImage = 'url(' + D3API.Media.paperdoll(data) + ')';
+                        showItems(data.items);
+					}
+				});
+			}
+			
+			function showItems(items) {
+                var elItems = document.getElementById("items");
+                
+                for (var type in items) {
+                    elItems.appendChild(createItem(type, items[type]));
+                }
+			}
+            function createItem(type, item) {
+                var el = document.createElement('span');
+                el.className = 'item ' + type + ' color-' + item.displayColor;
+                el.style.backgroundImage = 'url(' + D3API.Media.item(item) + ')';
+                return el;
+            }
+            
+			window.onload = init;
+		</script>
+	</head> 
+	 
+	<body>
+        <div id="char">
+            <div id="bg"></div>
+            <div id="items"></div>
+        </div>
+		<script type="text/javascript" src="d3api.js"></script>
+	</body>
+</html>
