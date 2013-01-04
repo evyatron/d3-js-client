@@ -1,6 +1,8 @@
 var D3API = new function() {
-    var _this = this,
+    var self = this,
         server = '', locale = '',
+		
+		_e = encodeURIComponent,
         
         URL_BASE = 'http://{server}.battle.net/api/d3/',
         
@@ -28,42 +30,42 @@ var D3API = new function() {
         'JEWELER': 'jeweler'
     };
     
-    this.init = function(options) {
+    this.init = function init(options) {
         !options && (options = {});
         
-        _expose("Followers", _this.FOLLOWERS, "getFollower");
-        _expose("Artisans", _this.ARTISANS, "getArtisan");
+        _expose("Followers", self.FOLLOWERS, "getFollower");
+        _expose("Artisans", self.ARTISANS, "getArtisan");
         
-        _this.setServer(options.server || _this.SERVERS.US);
-        _this.setLocale(options.locale || _this.LOCALES.EN_US);
+        self.setServer(options.server || self.SERVERS.US);
+        self.setLocale(options.locale || self.LOCALES.EN_US);
         
-        return _this;
+        return self;
     };
     
-    this.getCareer = function(options){
+    this.getCareer = function getCareer(options){
         return _get(URL_CAREER, options);
     };
-    this.getHero = function(options){
+    this.getHero = function getHero(options){
         return _get(URL_HERO, options);
     };
-    this.getItem = function(options){
+    this.getItem = function getItem(options){
         _is(options.item, "object") && (options.item = options.item.tooltipParams.replace(/item\//g, ''));
         return _get(URL_ITEM, options);
     };
-    this.getFollower = function(options){
+    this.getFollower = function getFollower(options){
         return _get(URL_FOLLOWER, options);
     };
-    this.getArtisan = function(options){
+    this.getArtisan = function getArtisan(options){
         return _get(URL_ARTISAN, options);
     };
     
-    this.setServer = function(_val){
-        _val && (server = _val);
-        return _this;
+    this.setServer = function setServer(newServer){
+        newServer && (server = newServer);
+        return self;
     };
-    this.setLocale = function(_val){
-        _val && (locale = _val);
-        return _this;
+    this.setLocale = function setLocale(newLocale){
+        newLocale && (locale = newLocale);
+        return self;
     };
 
     this.Media = new function() {
@@ -92,45 +94,45 @@ var D3API = new function() {
             'SMALL': 42
         };
         
-        this.paperdoll = function(cls, gender) {
+        this.paperdoll = function paperdoll(cls, gender) {
             _is(cls, "object") && (gender = cls["gender"], cls = cls["class"]);
-            _is(gender, "number") && (gender = _this.Media.GENDERS[gender]);
+            _is(gender, "number") && (gender = self.Media.GENDERS[gender]);
             
-            cls = cls || _this.Media.CLASSES.BARBARIAN;
-            gender = gender || _this.Media.GENDERS.FEMALE;
+            cls = cls || self.Media.CLASSES.BARBARIAN;
+            gender = gender || self.Media.GENDERS.FEMALE;
             
             return IMAGE_PAPERDOLL + _e(cls) + '-' + _e(gender) + '.jpg';
         };
         
-        this.item = function(slug, size) {
+        this.item = function item(slug, size) {
             _is(slug, "object") && (slug = slug.icon);
-            size = size || _this.Media.ITEM_SIZES.LARGE;
+            size = size || self.Media.ITEM_SIZES.LARGE;
             return ICON_PREFIX + 'items/' + _e(size) + '/' + _e(slug) + '.png';
         };
         
-        this.skill = function(slug, size) {
+        this.skill = function skill(slug, size) {
             _is(slug, "object") && (slug = slug.skill? slug.skill.icon : slug.icon);
-            size = size || _this.Media.SKILL_SIZES.LARGE;
+            size = size || self.Media.SKILL_SIZES.LARGE;
             return ICON_PREFIX + 'skills/' + _e(size) + '/' + _e(slug) + '.png';
         };
     };
     
     // create public functions for each object in DATA under the NAMESPACE
     function _expose(namespace, data, actualMethod) {
-        if (_this[namespace]) return;
+        if (self[namespace]) return;
         
-        _this[namespace] = {};
+        self[namespace] = {};
         for (var key in data) {
             (function createMethod(obj, actualMethod, key, value) {
                 var keyMethod = key.charAt(0).toUpperCase() + key.substring(1).toLowerCase();
                 obj[keyMethod] = function(callback) {
-                    return _this[actualMethod]({
+                    return self[actualMethod]({
                         "success": callback,
                         "error": callback,
                         "type": value
                     });
                 };
-            })(_this[namespace], actualMethod, key, data[key]);
+            })(self[namespace], actualMethod, key, data[key]);
         }
     }
     
@@ -151,8 +153,15 @@ var D3API = new function() {
         var missingParams = urlPart.match(/{([^}]*)}/) || [];
         if (missingParams.length > 1) throw EXCEPTION_MISSING_PARAM.replace(/{paramName}/g, missingParams[1]);
         
-        var cb = "_cb" + new Date().getTime(),
-            url = URL_BASE.replace(/{server}/g, options.server || server) + urlPart + '?locale=' + _e(options.locale || locale) + '&callback=' + _e(cb);
+        var cb = 'd3cb_' + Date.now(),
+            url = [
+					URL_BASE.replace(/{server}/g, options.server || server),
+					urlPart,
+					'?locale=',
+					_e(options.locale || locale),
+					'&callback=',
+					_e(cb)
+					].join('');
         
         var script = document.createElement("script");
         script.type = "text/javascript";
@@ -160,17 +169,16 @@ var D3API = new function() {
         
         window[cb] = function(data) {
             script.parentNode.removeChild(script);
-            (options[(data.code? "error" : "success")] || function(){})(data, url, options);
+            (options[(data.code? 'error' : 'success')] || function(){})(data, url.replace(/&callback=[^&\s]*/, ''), options);
             delete window[cb];
         };
         
         document.body.appendChild(script);
         
-        return _this;
+        return self;
     }
     
-    function _e(s) { return encodeURIComponent(""+s); }
     function _is(o, t) { return (typeof o === t); }
     
-    _this.init();
+    self.init();
 };
